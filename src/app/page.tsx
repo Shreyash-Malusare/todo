@@ -1,103 +1,197 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+type Todo = {
+  id: number;
+  text: string;
+  completed: boolean;
+  createdAt: string;
+  dueDate?: string;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [task, setTask] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    const stored = localStorage.getItem('todos');
+    if (stored) setTodos(JSON.parse(stored));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
+
+  const addTodo = () => {
+    if (!task.trim()) return;
+    const newTodo: Todo = {
+      id: Date.now(),
+      text: task.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+      dueDate: dueDate || '',
+    };
+    setTodos([newTodo, ...todos]);
+    setTask('');
+    setDueDate('');
+    inputRef.current?.focus();
+  };
+
+  const toggleTodo = (id: number) => {
+    setTodos(todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
+
+  const deleteTodo = (id: number) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this task?');
+    if (confirmDelete) {
+      setTodos(todos.filter(todo => todo.id !== id));
+    }
+  };
+
+  const editTodo = (id: number, newText: string) => {
+    setTodos(todos.map(todo =>
+      todo.id === id ? { ...todo, text: newText } : todo
+    ));
+  };
+
+  const filteredTodos = todos.filter(todo => {
+    if (filter === 'active') return !todo.completed;
+    if (filter === 'completed') return todo.completed;
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white px-4 py-6 sm:px-6 lg:px-8 transition-colors">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8">
+          Taskify
+        </h1>
+
+        {/* Task Input */}
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <input
+            ref={inputRef}
+            type="text"
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            placeholder="Add a new task..."
+            className="flex-grow px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 focus:outline-none text-sm sm:text-base"
+          />
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"
+          />
+          <button
+            onClick={addTodo}
+            className="bg-blue-600 px-4 py-2 rounded text-white hover:bg-blue-700 transition text-sm sm:text-base"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Add
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6">
+          {(['all', 'active', 'completed'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded text-sm sm:text-base ${filter === f
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-300 dark:bg-gray-700 dark:text-white text-black hover:bg-gray-400 dark:hover:bg-gray-600'
+                }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Task List */}
+        <ul className="space-y-2">
+          <AnimatePresence>
+            {filteredTodos.length === 0 && (
+              <motion.li
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center text-gray-400"
+              >
+                No tasks
+              </motion.li>
+            )}
+
+            {filteredTodos.map((todo) => (
+              <motion.li
+                key={todo.id}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded"
+              >
+                <div className="flex-1 mb-2 sm:mb-0 sm:mr-4">
+                  <input
+                    type="text"
+                    value={todo.text}
+                    onChange={(e) => editTodo(todo.id, e.target.value)}
+                    className={`w-full bg-transparent outline-none text-sm sm:text-base ${todo.completed ? 'line-through text-gray-500' : ''
+                      }`}
+                  />
+                  <div className="text-xs text-gray-500">
+                    Created: {new Date(todo.createdAt).toLocaleString()}
+                  </div>
+                  {todo.dueDate && (
+                    <div
+                      className={`text-xs ${!todo.completed && new Date(todo.dueDate) < new Date()
+                        ? 'text-red-500 font-semibold'
+                        : 'text-yellow-400'
+                        }`}
+                    >
+                      Due: {todo.dueDate}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 justify-end">
+                  {todo.completed ? (
+                    <button
+                      onClick={() => toggleTodo(todo.id)}
+                      title="Undo"
+                      className="text-yellow-400 hover:text-yellow-600 text-sm"
+                    >
+                      Undo
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => toggleTodo(todo.id)}
+                      title="Mark as complete"
+                      className="text-green-500 hover:text-green-700 text-lg"
+                    >
+                      ✔
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteTodo(todo.id)}
+                    title="Delete"
+                    className="text-red-400 hover:text-red-600 text-lg"
+                  >
+                    ❌
+                  </button>
+                </div>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+      </div>
     </div>
   );
 }
