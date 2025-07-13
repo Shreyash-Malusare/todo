@@ -191,6 +191,9 @@ export default function Home() {
             ))}
           </AnimatePresence>
         </ul>
+        <footer className="text-center mt-12 text-white/60">
+          <p>&copy; 2025 Taskify a ToDo App Made by Shreyash Malusare.</p>
+        </footer>
       </div>
     </div>
   );
